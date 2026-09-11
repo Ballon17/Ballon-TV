@@ -10,7 +10,9 @@ import { StandingsView } from './components/StandingsView';
 import { BroadcastGuide } from './components/BroadcastGuide';
 import { TVModeView } from './components/TVModeView';
 import { AdminStreamModal } from './components/AdminStreamModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import { fetchLiveMatchesFromApi } from './services/matchesApi';
+import { updateMatchMetaTags } from './utils/metaTags';
 import { Tv, Flame, Calendar, Trophy, Sparkles, BellRing, RefreshCw, Plus, RotateCcw, MonitorPlay, Settings, Clock, Star, Zap, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
@@ -165,6 +167,51 @@ export default function App() {
     }
   }, [matches, activeStreamingMatch?.id]);
 
+  // Deep linking: Read match ID from URL on initial load and open player if specified
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const urlMatchId = params.get('match');
+      if (urlMatchId) {
+        const found = matches.find((m) => m.id === urlMatchId);
+        if (found) {
+          setActiveStreamingMatch(found);
+          updateMatchMetaTags(found);
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading match ID from URL:', e);
+    }
+  }, []);
+
+  // Synchronize Open Graph, Twitter meta tags, and browser URL whenever activeStreamingMatch changes
+  useEffect(() => {
+    if (activeStreamingMatch) {
+      updateMatchMetaTags(activeStreamingMatch);
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.get('match') !== activeStreamingMatch.id) {
+          url.searchParams.set('match', activeStreamingMatch.id);
+          window.history.replaceState({}, '', url.toString());
+        }
+      } catch (e) {
+        // Fallback for restricted iframes
+      }
+    } else {
+      updateMatchMetaTags(null);
+      try {
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('match')) {
+          url.searchParams.delete('match');
+          const cleanUrl = url.pathname + (url.search ? url.search : '') + url.hash;
+          window.history.replaceState({}, '', cleanUrl || '/');
+        }
+      } catch (e) {
+        // Fallback
+      }
+    }
+  }, [activeStreamingMatch]);
+
   // Add or update match
   const handleAddOrUpdateMatch = (newMatch: Match) => {
     setMatches((prev) => {
@@ -294,7 +341,7 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950 pb-16 md:pb-0">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950 pb-24 md:pb-8">
       {/* Goal Notification Banner */}
       {goalAlert && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white px-5 py-3 rounded-2xl shadow-2xl border border-emerald-400/50 flex items-center gap-3 animate-bounce">
@@ -348,7 +395,7 @@ export default function App() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 py-4 sm:py-6">
         {activeView === 'matches' ? (
           <div>
             {/* Section Header */}
@@ -483,7 +530,7 @@ export default function App() {
                 </div>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-5">
                 {filteredMatches.map((match) => (
                   <MatchCard
                     key={match.id}
@@ -544,76 +591,21 @@ export default function App() {
         />
       )}
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/90 px-3 py-2 flex items-center justify-around text-[10px] font-bold shadow-2xl">
-        <button
-          onClick={() => {
-            setActiveDate('yesterday');
-            setActiveView('matches');
-          }}
-          className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${
-            activeDate === 'yesterday' && activeView === 'matches'
-              ? 'text-emerald-400 scale-105'
-              : 'text-slate-400'
-          }`}
-        >
-          <Calendar className="w-4 h-4" />
-          <span>الأمس</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveDate('today');
-            setActiveView('matches');
-          }}
-          className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all relative ${
-            activeDate === 'today' && activeView === 'matches'
-              ? 'text-emerald-400 scale-105'
-              : 'text-slate-400'
-          }`}
-        >
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
-          </span>
-          <Tv className="w-4 h-4" />
-          <span>اليوم (مباشر)</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setActiveDate('tomorrow');
-            setActiveView('matches');
-          }}
-          className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${
-            activeDate === 'tomorrow' && activeView === 'matches'
-              ? 'text-emerald-400 scale-105'
-              : 'text-slate-400'
-          }`}
-        >
-          <Clock className="w-4 h-4" />
-          <span>الغد</span>
-        </button>
-
-        <button
-          onClick={() => setIsTVMode(true)}
-          className="flex flex-col items-center gap-1 p-1 rounded-xl text-blue-400 transition-all hover:scale-105"
-        >
-          <MonitorPlay className="w-4 h-4" />
-          <span>التلفاز 📺</span>
-        </button>
-
-        <button
-          onClick={() => {
-            setAdminSelectedMatchId(matches[0]?.id || '');
-            setIsAdminModalOpen(true);
-          }}
-          className="flex flex-col items-center gap-1 p-1 rounded-xl text-amber-400 transition-all hover:scale-105"
-        >
-          <Settings className="w-4 h-4" />
-          <span>لوحة التحكم ⚙️</span>
-        </button>
-      </div>
+      {/* Mobile Bottom Navigation Dock */}
+      <MobileBottomNav
+        activeView={activeView}
+        onViewChange={setActiveView}
+        statusFilter={statusFilter}
+        onStatusFilterChange={setStatusFilter}
+        liveCount={liveMatches.length}
+        favoritesOnly={favoritesOnly}
+        onToggleFavorites={() => setFavoritesOnly(!favoritesOnly)}
+        favoritesCount={favorites.length}
+        onOpenAdminPanel={() => {
+          setAdminSelectedMatchId(matches[0]?.id || '');
+          setIsAdminModalOpen(true);
+        }}
+      />
 
       {/* Footer */}
       <footer className="bg-slate-950 border-t border-slate-900 mt-12 py-8 px-4 sm:px-6 text-xs text-slate-500">

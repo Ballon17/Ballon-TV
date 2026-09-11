@@ -3,6 +3,7 @@ import path from "path";
 import fs from "fs";
 import os from "os";
 import { createServer as createViteServer } from "vite";
+import { mockMatches } from "./src/data/mockMatches";
 
 interface CacheEntry {
   timestamp: number;
@@ -15,6 +16,110 @@ function getRiyadhDate(offsetDays: number = 0): string {
   const d = new Date();
   d.setDate(d.getDate() + offsetDays);
   return d.toLocaleDateString("en-CA", { timeZone: "Asia/Riyadh" }); // YYYY-MM-DD
+}
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function replaceOrInsertMeta(html: string, identifier: string, replacement: string): string {
+  const regex = new RegExp(`<meta\\s+[^>]*${identifier}[^>]*>`, "i");
+  if (regex.test(html)) {
+    return html.replace(regex, replacement);
+  }
+  return html.replace("</head>", `  ${replacement}\n</head>`);
+}
+
+/**
+ * Injects Open Graph, Twitter, and Schema.org metadata for a specific or current live match into HTML.
+ * This guarantees rich previews on social media platforms (WhatsApp, Twitter/X, Facebook, Telegram, Discord).
+ */
+function injectMatchMetaTags(html: string, matchId: string | undefined, req: express.Request): string {
+  try {
+    const match = matchId
+      ? mockMatches.find((m) => m.id === matchId) || mockMatches.find((m) => m.status === "live") || mockMatches[0]
+      : mockMatches.find((m) => m.status === "live") || mockMatches[0];
+
+    if (!match) return html;
+
+    const host = req.get("x-forwarded-host") || req.get("host") || "localhost:3000";
+    const protocol = req.get("x-forwarded-proto") || req.protocol || "https";
+    const baseUrl = `${protocol}://${host}`;
+    const shareUrl = `${baseUrl}/?match=${encodeURIComponent(match.id)}`;
+
+    const home = match.homeTeam?.name || "الفريق المضيف";
+    const away = match.awayTeam?.name || "الفريق الضيف";
+    const league = match.leagueName || "أقوى الدوريات العالمية";
+    const isLive = match.status === "live";
+    const isFinished = match.status === "finished";
+
+    const scoreText = isLive
+      ? `مباشر الآن (${match.homeScore ?? 0} - ${match.awayScore ?? 0}) دقيقة ${match.currentMinute ?? 0}'`
+      : isFinished
+      ? `انتهت (${match.homeScore ?? 0} - ${match.awayScore ?? 0})`
+      : `الساعة ${match.time} بتوقيت مكة المكرمة`;
+
+    const dynamicTitle = `🔴 بث مباشر: ${home} ضد ${away} | ${league} - كورة لايف`;
+    const dynamicDesc = `شاهد الآن البث المباشر لمباراة ${home} ضد ${away} (${scoreText}) في ${league}. القناة الناقلة: ${match.channel || "beIN Sports"}، تعليق: ${match.commentator || "عصام الشوالي"}. سيرفرات متعددة وسريعة بدون تقطيع.`;
+    const matchImage =
+      match.homeTeam?.logo ||
+      match.awayTeam?.logo ||
+      "https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&h=630&fit=crop&q=80";
+
+    // Update <title>
+    html = html.replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeHtml(dynamicTitle)}</title>`);
+
+    // Update Meta Description
+    html = replaceOrInsertMeta(html, 'name="description"', `<meta name="description" content="${escapeHtml(dynamicDesc)}" />`);
+
+    // Update Open Graph tags
+    html = replaceOrInsertMeta(html, 'property="og:title"', `<meta property="og:title" content="${escapeHtml(dynamicTitle)}" />`);
+    html = replaceOrInsertMeta(html, 'property="og:description"', `<meta property="og:description" content="${escapeHtml(dynamicDesc)}" />`);
+    html = replaceOrInsertMeta(html, 'property="og:url"', `<meta property="og:url" content="${escapeHtml(shareUrl)}" />`);
+    html = replaceOrInsertMeta(html, 'property="og:image"', `<meta property="og:image" content="${escapeHtml(matchImage)}" />`);
+    html = replaceOrInsertMeta(html, 'property="og:image:secure_url"', `<meta property="og:image:secure_url" content="${escapeHtml(matchImage)}" />`);
+    html = replaceOrInsertMeta(html, 'property="og:image:alt"', `<meta property="og:image:alt" content="${escapeHtml(home + " ضد " + away + " - بث مباشر")}" />`);
+
+    // Update Twitter Card tags
+    html = replaceOrInsertMeta(html, 'name="twitter:title"', `<meta name="twitter:title" content="${escapeHtml(dynamicTitle)}" />`);
+    html = replaceOrInsertMeta(html, 'name="twitter:description"', `<meta name="twitter:description" content="${escapeHtml(dynamicDesc)}" />`);
+    html = replaceOrInsertMeta(html, 'name="twitter:image"', `<meta name="twitter:image" content="${escapeHtml(matchImage)}" />`);
+    html = replaceOrInsertMeta(html, 'name="twitter:image:alt"', `<meta name="twitter:image:alt" content="${escapeHtml(home + " ضد " + away)}" />`);
+    html = replaceOrInsertMeta(html, 'name="twitter:data1"', `<meta name="twitter:data1" content="${escapeHtml(league)}" />`);
+    html = replaceOrInsertMeta(html, 'name="twitter:data2"', `<meta name="twitter:data2" content="${escapeHtml(isLive ? "مباشر الآن 🔴" : match.time)}" />`);
+
+    // Update JSON-LD Structured Data
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "SportsEvent",
+      name: `${home} ضد ${away}`,
+      description: dynamicDesc,
+      sport: "Soccer",
+      url: shareUrl,
+      eventStatus: isLive
+        ? "https://schema.org/EventLive"
+        : isFinished
+        ? "https://schema.org/EventCompleted"
+        : "https://schema.org/EventScheduled",
+      homeTeam: { "@type": "SportsTeam", name: home, image: match.homeTeam?.logo },
+      awayTeam: { "@type": "SportsTeam", name: away, image: match.awayTeam?.logo },
+      location: { "@type": "Place", name: match.stadium || "الملعب الرئيسي" },
+      broadcast: { "@type": "BroadcastEvent", name: match.channel || "beIN Sports", isLiveBroadcast: isLive },
+    };
+
+    html = html.replace(
+      /<script type="application\/ld\+json" id="match-ld-json">[\s\S]*?<\/script>/i,
+      `<script type="application/ld+json" id="match-ld-json">${JSON.stringify(jsonLd)}</script>`
+    );
+  } catch (err) {
+    console.error("Match meta injection error in server:", err);
+  }
+  return html;
 }
 
 async function startServer() {
@@ -166,17 +271,53 @@ async function startServer() {
     }
   });
 
-  // Vite middleware setup
+  // Vite middleware & HTML serving setup
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
+
+    // Dynamic HTML injection middleware for dev (handles match sharing links and social crawlers)
+    app.use(async (req, res, next) => {
+      const url = req.originalUrl || req.url;
+      const isHtmlRequest =
+        req.method === "GET" &&
+        !url.startsWith("/api/") &&
+        !url.startsWith("/@") &&
+        !url.startsWith("/src/") &&
+        !url.startsWith("/node_modules/") &&
+        (req.headers.accept?.includes("text/html") || url === "/" || url.startsWith("/?") || url.startsWith("/match/"));
+
+      if (isHtmlRequest) {
+        try {
+          const matchId = (req.query.match as string) || (url.startsWith("/match/") ? url.split("/")[2]?.split("?")[0] : undefined);
+          const indexPath = path.join(process.cwd(), "index.html");
+          let rawHtml = fs.readFileSync(indexPath, "utf-8");
+          let transformedHtml = await vite.transformIndexHtml(url, rawHtml);
+          transformedHtml = injectMatchMetaTags(transformedHtml, matchId, req);
+          res.setHeader("Content-Type", "text/html; charset=utf-8");
+          return res.status(200).end(transformedHtml);
+        } catch (e) {
+          return next(e);
+        }
+      }
+      next();
+    });
+
     app.use(vite.middlewares);
   } else {
     const distPath = path.join(process.cwd(), "dist");
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { index: false }));
     app.get("*", (req, res) => {
+      const matchId = (req.query.match as string) || (req.path.startsWith("/match/") ? req.path.split("/")[2] : undefined);
+      const indexPath = path.join(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        let html = fs.readFileSync(indexPath, "utf-8");
+        html = injectMatchMetaTags(html, matchId, req);
+        res.setHeader("Content-Type", "text/html; charset=utf-8");
+        return res.send(html);
+      }
       res.sendFile(path.join(distPath, "index.html"));
     });
   }

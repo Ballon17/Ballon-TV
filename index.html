@@ -2,13 +2,166 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#020617" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="كورة لايف" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
     <title>كورة لايف - بث المباريات مباشرة و يومياً</title>
     <meta name="description" content="منصة بث المباريات المباشرة ومواعيد ونتائج مباريات اليوم والقنوات الناقلة والتعليق العربي وترتيب الدوريات." />
+    <meta name="keywords" content="كورة لايف, بث مباشر, مباريات اليوم, كورة اون لاين, بث مباريات, دوري ابطال اوروبا, الدوري الانجليزي, الدوري الاسباني" />
+    <meta name="robots" content="index, follow" />
+
+    <!-- Open Graph / Facebook / WhatsApp Meta Tags for Match Sharing -->
+    <meta property="og:site_name" content="كورة لايف - Kora Live" />
+    <meta property="og:type" content="video.other" />
     <meta property="og:title" content="كورة لايف - بث المباريات مباشرة و يومياً" />
     <meta property="og:description" content="منصة بث المباريات المباشرة ومواعيد ونتائج مباريات اليوم والقنوات الناقلة والتعليق العربي وترتيب الدوريات." />
-    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://kora-live.app/" />
+    <meta property="og:image" content="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&h=630&fit=crop&q=80" />
+    <meta property="og:image:secure_url" content="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&h=630&fit=crop&q=80" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:alt" content="كورة لايف - بث مباشر للمباريات بجودة عالية" />
+    <meta property="og:locale" content="ar_AR" />
+    <meta property="og:locale:alternate" content="ar_SA" />
+    <meta property="og:locale:alternate" content="ar_EG" />
+
+    <!-- Twitter / X Meta Tags for Match Sharing Cards -->
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@KoraLive" />
+    <meta name="twitter:creator" content="@KoraLive" />
+    <meta name="twitter:title" content="كورة لايف - بث المباريات مباشرة و يومياً" />
+    <meta name="twitter:description" content="منصة بث المباريات المباشرة ومواعيد ونتائج مباريات اليوم والقنوات الناقلة والتعليق العربي وترتيب الدوريات." />
+    <meta name="twitter:image" content="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&h=630&fit=crop&q=80" />
+    <meta name="twitter:image:alt" content="كورة لايف - بث مباشر للمباريات" />
+    <meta name="twitter:label1" content="البطولة" />
+    <meta name="twitter:data1" content="أقوى الدوريات العالمية والعربية" />
+    <meta name="twitter:label2" content="حالة البث" />
+    <meta name="twitter:data2" content="بث مباشر الآن 🔴" />
+
+    <!-- Schema.org JSON-LD Structured Data for Match Sharing -->
+    <script type="application/ld+json" id="match-ld-json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SportsEvent",
+      "name": "كورة لايف - بث المباريات مباشرة و يومياً",
+      "description": "منصة بث المباريات المباشرة ومواعيد ونتائج مباريات اليوم والقنوات الناقلة والتعليق العربي وترتيب الدوريات.",
+      "sport": "Soccer",
+      "eventStatus": "https://schema.org/EventLive"
+    }
+    </script>
+
+    <!-- Automatic Current Match Data Injection for Social Media Sharing & Dynamic Previews -->
+    <script>
+      (function() {
+        try {
+          // Read match ID from query string '?match=...' or hash '#match=...'
+          var params = new URLSearchParams(window.location.search);
+          var matchId = params.get('match');
+          if (!matchId && window.location.hash && window.location.hash.indexOf('match=') !== -1) {
+            var hashMatch = window.location.hash.split('match=')[1];
+            if (hashMatch) matchId = hashMatch.split('&')[0];
+          }
+
+          var targetMatch = null;
+          var cachedRaw = localStorage.getItem('kora_live_matches_v2');
+          if (cachedRaw) {
+            try {
+              var matchesList = JSON.parse(cachedRaw);
+              if (Array.isArray(matchesList) && matchesList.length > 0) {
+                if (matchId) {
+                  targetMatch = matchesList.find(function(m) { return m.id === matchId; });
+                }
+                if (!targetMatch) {
+                  // If no specific match requested, pick the current top live match
+                  targetMatch = matchesList.find(function(m) { return m.status === 'live'; }) || matchesList[0];
+                }
+              }
+            } catch(e) {}
+          }
+
+          // Fallback default showcase match if localStorage is empty
+          if (!targetMatch) {
+            targetMatch = {
+              id: matchId || 'match-today-1',
+              leagueName: 'دوري أبطال أوروبا',
+              channel: 'beIN Sports 1 HD Premium',
+              commentator: 'عصام الشوالي',
+              status: 'live',
+              homeScore: 2,
+              awayScore: 1,
+              currentMinute: 72,
+              homeTeam: { name: 'ريال مدريد', logo: 'https://images.unsplash.com/photo-1522778119026-d647f0596c20?w=1200&h=630&fit=crop&q=80' },
+              awayTeam: { name: 'مانشستر سيتي', logo: 'https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=1200&h=630&fit=crop&q=80' }
+            };
+          }
+
+          if (targetMatch && targetMatch.homeTeam && targetMatch.awayTeam) {
+            var home = targetMatch.homeTeam.name || 'الفريق المضيف';
+            var away = targetMatch.awayTeam.name || 'الفريق الضيف';
+            var league = targetMatch.leagueName || 'أقوى المباريات';
+            var isLive = targetMatch.status === 'live';
+            var isFinished = targetMatch.status === 'finished';
+
+            var scoreText = isLive
+              ? ('مباشر الآن (' + (targetMatch.homeScore || 0) + ' - ' + (targetMatch.awayScore || 0) + ') دقيقة ' + (targetMatch.currentMinute || 0) + "'")
+              : (isFinished
+                ? ('انتهت (' + (targetMatch.homeScore || 0) + ' - ' + (targetMatch.awayScore || 0) + ')')
+                : ('الساعة ' + (targetMatch.time || '22:00') + ' بتوقيت مكة'));
+
+            var dynamicTitle = '🔴 بث مباشر: ' + home + ' ضد ' + away + ' | ' + league + ' - كورة لايف';
+            var dynamicDesc = 'شاهد الآن البث المباشر لمباراة ' + home + ' و ' + away + ' (' + scoreText + ') في ' + league + '. القناة: ' + (targetMatch.channel || 'beIN Sports') + ' • تعليق: ' + (targetMatch.commentator || 'عصام الشوالي') + ' • سيرفرات سريعة بدون تقطيع.';
+            var shareUrl = window.location.origin + window.location.pathname + '?match=' + encodeURIComponent(targetMatch.id);
+            var matchImage = (targetMatch.homeTeam && targetMatch.homeTeam.logo) || (targetMatch.awayTeam && targetMatch.awayTeam.logo) || 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=1200&h=630&fit=crop&q=80';
+
+            // Only override if specific match ID was requested or on initial load
+            if (matchId) {
+              document.title = dynamicTitle;
+            }
+
+            function setAttr(sel, attr, val) {
+              var el = document.querySelector(sel);
+              if (el) el.setAttribute(attr, val);
+            }
+
+            setAttr('meta[name="description"]', 'content', dynamicDesc);
+            setAttr('meta[property="og:title"]', 'content', dynamicTitle);
+            setAttr('meta[property="og:description"]', 'content', dynamicDesc);
+            setAttr('meta[property="og:url"]', 'content', shareUrl);
+            setAttr('meta[property="og:image"]', 'content', matchImage);
+            setAttr('meta[property="og:image:secure_url"]', 'content', matchImage);
+            setAttr('meta[property="og:image:alt"]', 'content', home + ' ضد ' + away + ' - بث مباشر');
+            setAttr('meta[name="twitter:title"]', 'content', dynamicTitle);
+            setAttr('meta[name="twitter:description"]', 'content', dynamicDesc);
+            setAttr('meta[name="twitter:image"]', 'content', matchImage);
+            setAttr('meta[name="twitter:image:alt"]', 'content', home + ' ضد ' + away);
+            setAttr('meta[name="twitter:data1"]', 'content', league);
+            setAttr('meta[name="twitter:data2"]', 'content', isLive ? 'مباشر الآن 🔴' : (targetMatch.time || 'قريباً'));
+
+            var ldJson = document.getElementById('match-ld-json');
+            if (ldJson) {
+              ldJson.textContent = JSON.stringify({
+                '@context': 'https://schema.org',
+                '@type': 'SportsEvent',
+                'name': home + ' ضد ' + away,
+                'description': dynamicDesc,
+                'sport': 'Soccer',
+                'url': shareUrl,
+                'eventStatus': isLive ? 'https://schema.org/EventLive' : (isFinished ? 'https://schema.org/EventCompleted' : 'https://schema.org/EventScheduled'),
+                'homeTeam': { '@type': 'SportsTeam', 'name': home, 'image': targetMatch.homeTeam.logo },
+                'awayTeam': { '@type': 'SportsTeam', 'name': away, 'image': targetMatch.awayTeam.logo }
+              });
+            }
+          }
+        } catch(err) {
+          console.warn('Match meta injection:', err);
+        }
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Changa:wght@600;700;800&display=swap" rel="stylesheet">

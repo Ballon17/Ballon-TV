@@ -5,7 +5,7 @@ import { StreamEnginePlayer } from './StreamEnginePlayer';
 import {
   X, Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, RefreshCw,
   Radio, Shield, MessageSquare, BarChart2, Users, Flame, Send,
-  Tv, Sparkles, CheckCircle, Info, Settings
+  Tv, Sparkles, CheckCircle, Info, Settings, Share2, Check
 } from 'lucide-react';
 
 interface LivePlayerModalProps {
@@ -59,6 +59,34 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
   const [isCinemaMode, setIsCinemaMode] = useState<boolean>(false);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [selectedTab, setSelectedTab] = useState<'timeline' | 'stats' | 'lineups' | 'chat' | 'info'>('timeline');
+  const [copiedShare, setCopiedShare] = useState(false);
+
+  const handleShareMatch = async () => {
+    const shareUrl = `${window.location.origin}/?match=${encodeURIComponent(match.id)}`;
+    const shareTitle = `🔴 بث مباشر: ${match.homeTeam.name} ضد ${match.awayTeam.name}`;
+    const shareText = `شاهد الآن البث المباشر لمباراة ${match.homeTeam.name} و ${match.awayTeam.name} (${match.leagueName}) بجودة عالية وبدون تقطيع على كورة لايف!`;
+
+    if (typeof navigator !== 'undefined' && navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: shareText,
+          url: shareUrl,
+        });
+        return;
+      } catch (err) {
+        // User canceled or not supported
+      }
+    }
+
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopiedShare(true);
+      setTimeout(() => setCopiedShare(false), 2200);
+    } catch (err) {
+      console.error('Clipboard copy failed:', err);
+    }
+  };
 
   // Live Chat State
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
@@ -296,58 +324,88 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 bg-slate-950/95 backdrop-blur-xl flex flex-col justify-between overflow-y-auto">
       {/* Top Header of the Stream Theater */}
-      <div className="bg-slate-950 border-b border-slate-800 px-4 sm:px-6 py-3 flex items-center justify-between sticky top-0 z-30">
-        <div className="flex items-center gap-3">
+      <div className="bg-slate-950 border-b border-slate-800 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between sticky top-0 z-30">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <button
             onClick={onClose}
-            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors"
+            className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition-colors shrink-0"
             title="رجوع للجدول"
           >
             <X className="w-5 h-5" />
           </button>
 
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="font-extrabold text-base sm:text-lg text-white">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {match.homeTeam.logo && (
+                <img
+                  src={match.homeTeam.logo}
+                  alt=""
+                  className="w-5 h-5 object-contain rounded shrink-0 hidden xs:inline"
+                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                />
+              )}
+              <h2 className="font-extrabold text-sm sm:text-lg text-white truncate">
                 {match.homeTeam.name} <span className="text-emerald-400">vs</span> {match.awayTeam.name}
               </h2>
+              {match.awayTeam.logo && (
+                <img
+                  src={match.awayTeam.logo}
+                  alt=""
+                  className="w-5 h-5 object-contain rounded shrink-0 hidden xs:inline"
+                  onError={(e) => { (e.target as HTMLElement).style.display = 'none'; }}
+                />
+              )}
               {match.status === 'live' && (
-                <span className="bg-red-600 text-white font-extrabold text-xs px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse">
+                <span className="bg-red-600 text-white font-extrabold text-[10px] sm:text-xs px-2 py-0.5 rounded-full flex items-center gap-1 animate-pulse shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                  <span>دقيقة {match.currentMinute}'</span>
+                  <span>د {match.currentMinute}'</span>
                 </span>
               )}
             </div>
-            <p className="text-xs text-slate-400">
-              {match.leagueName} • {match.channel} • تعليق: {match.commentator}
+            <p className="text-[11px] sm:text-xs text-slate-400 truncate">
+              {match.leagueName} • {match.channel} • {match.commentator}
             </p>
           </div>
         </div>
 
         {/* Action controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {onSimulateGoal && match.status === 'live' && (
             <button
               onClick={() => {
                 onSimulateGoal(match.homeTeam.id);
                 playCrowdSound();
               }}
-              className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl transition-all"
+              className="hidden md:flex items-center gap-1 px-3 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 text-xs font-bold rounded-xl transition-all"
               title="محاكاة تسجيل هدف وصيحة الجماهير"
             >
               <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
-              <span>تسجيل هدف تجريبي ⚽</span>
+              <span>هدف تجريبي ⚽</span>
             </button>
           )}
+
+          {/* Match Share Button */}
+          <button
+            onClick={handleShareMatch}
+            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
+              copiedShare
+                ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
+                : 'bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30'
+            }`}
+            title="مشاركة رابط بث هذه المباراة"
+          >
+            {copiedShare ? <Check className="w-3.5 h-3.5 text-white" /> : <Share2 className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{copiedShare ? 'تم النسخ!' : 'مشاركة 🔗'}</span>
+          </button>
 
           {onOpenAdminPanel && (
             <button
               onClick={onOpenAdminPanel}
-              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-colors bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 cursor-pointer"
+              className="px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 cursor-pointer"
               title="تعديل سيرفرات وروابط هذه المباراة (لوحة التحكم)"
             >
               <Settings className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">لوحة التحكم ⚙️</span>
+              <span className="hidden sm:inline">السيرفرات ⚙️</span>
             </button>
           )}
 
@@ -368,13 +426,13 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
           {/* Main Video Player Column (8 cols in standard mode) */}
           <div className={`${isCinemaMode ? 'lg:col-span-12' : 'lg:col-span-8'} flex flex-col gap-4`}>
             {/* Servers Switcher Bar */}
-            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 flex items-center justify-between gap-2 flex-wrap">
-              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300">
+            <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-2.5 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-slate-300 shrink-0">
                 <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
-                <span>سيرفرات البث:</span>
+                <span>سيرفرات البث المباشر:</span>
               </div>
 
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 scrollbar-none w-full sm:w-auto">
                 {match.servers.map((srv) => (
                   <button
                     key={srv.id}
@@ -383,7 +441,7 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
                       if (srv.videoUrl) setCustomStreamUrl(srv.videoUrl);
                       handleRefreshStream();
                     }}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                    className={`min-h-[36px] px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shrink-0 active:scale-95 ${
                       activeServer.id === srv.id
                         ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                         : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
@@ -619,6 +677,20 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
                   <Info className="w-4 h-4" />
                   <span>معلومات البث والقنوات</span>
                 </button>
+
+                {/* Mobile Chat Tab */}
+                <button
+                  onClick={() => setSelectedTab('chat')}
+                  className={`lg:hidden px-4 py-3 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+                    selectedTab === 'chat'
+                      ? 'border-emerald-500 text-emerald-400 bg-slate-900'
+                      : 'border-transparent text-slate-400 hover:text-white'
+                  }`}
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  <span>الدردشة الحية</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                </button>
               </div>
 
               <div className="p-4 sm:p-5">
@@ -753,12 +825,74 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
                     </div>
                   </div>
                 )}
+
+                {/* TAB 5: CHAT FOR MOBILE */}
+                {selectedTab === 'chat' && (
+                  <div className="flex flex-col h-[480px] bg-slate-950 rounded-xl border border-slate-800 overflow-hidden">
+                    <div className="bg-slate-900/90 border-b border-slate-800 p-2.5 flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <MessageSquare className="w-4 h-4 text-emerald-400" />
+                        <span className="font-bold text-xs text-white">دردشة البث المباشر</span>
+                      </div>
+                      <span className="text-[10px] text-emerald-400 font-bold bg-emerald-950/60 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        14,280 مشاهد متصل
+                      </span>
+                    </div>
+
+                    <div className="flex-1 p-3 overflow-y-auto space-y-2 text-xs">
+                      {chatMessages.map((msg) => (
+                        <div
+                          key={msg.id}
+                          className={`p-2 rounded-xl border ${
+                            msg.sender.includes('أنت')
+                              ? 'bg-emerald-950/30 border-emerald-500/40 mr-4'
+                              : 'bg-slate-900/80 border-slate-800'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-2 mb-0.5">
+                            <span className="font-bold text-slate-200">{msg.sender}</span>
+                            <span className="text-[10px] text-slate-500 font-mono">{msg.timestamp}</span>
+                          </div>
+                          <p className="text-slate-300">{msg.text}</p>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="p-1.5 bg-slate-900/80 border-t border-slate-800/60 flex items-center justify-around">
+                      {['⚽ هدففف', '🔥 مولعة', '👏 وحش', '👑 الأفضل'].map((tag) => (
+                        <button
+                          key={tag}
+                          onClick={() => setNewChatText(tag)}
+                          className="px-2 py-0.5 rounded-lg bg-slate-800 text-[10px] text-slate-300 hover:text-white"
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+
+                    <form onSubmit={handleSendChat} className="p-2 bg-slate-900 border-t border-slate-800 flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newChatText}
+                        onChange={(e) => setNewChatText(e.target.value)}
+                        placeholder="اكتب تعليقك..."
+                        className="flex-1 bg-slate-950 border border-slate-700 text-xs rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="p-2 rounded-xl bg-emerald-600 text-white"
+                      >
+                        <Send className="w-4 h-4 rotate-180" />
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Right Column: Live Community Chat (4 cols) */}
-          <div className="lg:col-span-4 flex flex-col h-[580px] lg:h-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+          {/* Right Column: Live Community Chat (4 cols on desktop only) */}
+          <div className="hidden lg:flex lg:col-span-4 flex-col h-[580px] lg:h-auto bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
             <div className="bg-slate-950/80 border-b border-slate-800 p-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <MessageSquare className="w-4 h-4 text-emerald-400" />

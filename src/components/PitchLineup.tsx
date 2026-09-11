@@ -19,8 +19,8 @@ export const PitchLineup: React.FC<PitchLineupProps> = ({ match }) => {
   const fws = currentLineup.startingXI.filter(p => p.position === 'FW');
 
   const renderPlayerBadge = (player: Player) => (
-    <div key={player.number} className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-110">
-      <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-xs shadow-lg border-2 ${
+    <div key={player.number} className="flex flex-col items-center group cursor-pointer transition-transform hover:scale-105">
+      <div className={`w-7 h-7 sm:w-9 sm:h-9 rounded-full flex items-center justify-center font-black text-[11px] sm:text-xs shadow-lg border-2 ${
         player.position === 'GK'
           ? 'bg-amber-400 text-slate-950 border-amber-200'
           : selectedTeam === 'home'
@@ -29,52 +29,52 @@ export const PitchLineup: React.FC<PitchLineupProps> = ({ match }) => {
       }`}>
         <span>{player.number}</span>
       </div>
-      <div className="mt-1 px-1.5 py-0.5 rounded bg-slate-950/80 backdrop-blur-xs text-[10px] sm:text-xs font-semibold text-white whitespace-nowrap border border-slate-700/60 flex items-center gap-1 shadow">
+      <div className="mt-1 px-1.5 py-0.5 rounded bg-slate-950/90 backdrop-blur-xs text-[9px] sm:text-xs font-semibold text-white whitespace-nowrap border border-slate-700/60 flex items-center gap-1 shadow max-w-[68px] sm:max-w-none">
         {player.isCaptain && (
-          <span className="bg-amber-400 text-slate-950 font-black text-[9px] px-1 rounded-xs">C</span>
+          <span className="bg-amber-400 text-slate-950 font-black text-[8px] sm:text-[9px] px-1 rounded-xs shrink-0">C</span>
         )}
-        <span>{player.name}</span>
+        <span className="truncate">{player.name}</span>
       </div>
     </div>
   );
 
   return (
-    <div className="bg-slate-900 rounded-2xl p-4 border border-slate-800">
+    <div className="bg-slate-900 rounded-2xl p-3 sm:p-4 border border-slate-800">
       {/* Team selector tabs */}
-      <div className="flex items-center justify-between gap-4 mb-4 border-b border-slate-800 pb-3">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 border-b border-slate-800 pb-3">
+        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-1 sm:pb-0">
           <button
             onClick={() => setSelectedTeam('home')}
-            className={`px-3 sm:px-4 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 sm:gap-2 shrink-0 ${
               selectedTeam === 'home'
                 ? 'bg-emerald-600 text-white shadow-md shadow-emerald-600/30'
                 : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
             <span>{match.homeTeam.name}</span>
-            <span className="text-xs bg-slate-950/50 px-2 py-0.5 rounded font-mono">
+            <span className="text-[10px] sm:text-xs bg-slate-950/50 px-1.5 py-0.5 rounded font-mono">
               {match.homeLineup.formation}
             </span>
           </button>
 
           <button
             onClick={() => setSelectedTeam('away')}
-            className={`px-3 sm:px-4 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-2 ${
+            className={`px-3 sm:px-4 py-1.5 rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center gap-1.5 sm:gap-2 shrink-0 ${
               selectedTeam === 'away'
                 ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
                 : 'bg-slate-800 text-slate-400 hover:text-white'
             }`}
           >
             <span>{match.awayTeam.name}</span>
-            <span className="text-xs bg-slate-950/50 px-2 py-0.5 rounded font-mono">
+            <span className="text-[10px] sm:text-xs bg-slate-950/50 px-1.5 py-0.5 rounded font-mono">
               {match.awayLineup.formation}
             </span>
           </button>
         </div>
 
-        <div className="text-xs text-slate-400 flex items-center gap-1.5">
-          <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
-          <span>المدرب: <strong className="text-slate-200">{currentLineup.manager}</strong></span>
+        <div className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-1.5">
+          <UserCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span className="truncate">المدرب: <strong className="text-slate-200">{currentLineup.manager}</strong></span>
         </div>
       </div>
 
