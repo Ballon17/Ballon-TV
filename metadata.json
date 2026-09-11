@@ -1,0 +1,6 @@
+{
+  "name": "كورة لايف - بث المباريات مباشرة و يومياً",
+  "description": "منصة بث المباريات المباشرة ومواعيد ونتائج مباريات اليوم والقنوات الناقلة والتعليق العربي وترتيب الدوريات.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
