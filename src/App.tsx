@@ -17,7 +17,21 @@ export default function App() {
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          // Validate that all matches have valid teams and servers
+          const isValid = parsed.every(
+            (m) =>
+              m &&
+              typeof m.id === 'string' &&
+              m.homeTeam &&
+              typeof m.homeTeam.name === 'string' &&
+              m.awayTeam &&
+              typeof m.awayTeam.name === 'string' &&
+              Array.isArray(m.servers) &&
+              m.servers.length > 0
+          );
+          if (isValid) {
+            return parsed;
+          }
         }
       }
     } catch (e) {
@@ -72,11 +86,11 @@ export default function App() {
   useEffect(() => {
     if (activeStreamingMatch) {
       const updated = matches.find((m) => m.id === activeStreamingMatch.id);
-      if (updated) {
+      if (updated && updated !== activeStreamingMatch) {
         setActiveStreamingMatch(updated);
       }
     }
-  }, [matches, activeStreamingMatch]);
+  }, [matches, activeStreamingMatch?.id]);
 
   // Add or update match
   const handleAddOrUpdateMatch = (newMatch: Match) => {

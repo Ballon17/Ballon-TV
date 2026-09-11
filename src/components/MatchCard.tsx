@@ -78,14 +78,14 @@ export const MatchCard: React.FC<MatchCardProps> = ({
           <div className="col-span-3 flex flex-col sm:flex-row items-center sm:gap-3 text-center sm:text-right">
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-800/80 p-2 border border-slate-700 flex items-center justify-center shadow-inner group-hover:border-emerald-500/40 transition-colors">
               <span className="text-lg font-black text-emerald-400 font-mono">
-                {match.homeTeam.shortName}
+                {match.homeTeam?.shortName || match.homeTeam?.name?.slice(0, 3).toUpperCase() || 'HOM'}
               </span>
             </div>
             <div className="mt-2 sm:mt-0">
               <h3 className="font-bold text-sm sm:text-base text-white tracking-wide">
-                {match.homeTeam.name}
+                {match.homeTeam?.name || 'الفريق المضيف'}
               </h3>
-              <span className="text-[11px] text-slate-400 block">{match.homeTeam.country}</span>
+              <span className="text-[11px] text-slate-400 block">{match.homeTeam?.country || ''}</span>
             </div>
           </div>
 
@@ -95,10 +95,10 @@ export const MatchCard: React.FC<MatchCardProps> = ({
               <div className="flex flex-col items-center">
                 <div className="flex items-center gap-1 bg-red-600 text-white font-extrabold text-[10px] sm:text-xs px-2 py-0.5 rounded-full shadow-lg shadow-red-600/40 animate-pulse mb-1">
                   <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                  <span>د {match.currentMinute}'</span>
+                  <span>د {match.currentMinute || 0}'</span>
                 </div>
                 <div className="text-xl sm:text-2xl font-black font-mono tracking-widest text-emerald-400 bg-slate-950 px-2 sm:px-3 py-1 rounded-xl border border-slate-800 shadow-inner">
-                  {match.homeScore} - {match.awayScore}
+                  {match.homeScore ?? 0} - {match.awayScore ?? 0}
                 </div>
               </div>
             ) : isFinished ? (
@@ -108,7 +108,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({
                   <span>انتهت</span>
                 </span>
                 <div className="text-xl sm:text-2xl font-black font-mono tracking-widest text-slate-100 bg-slate-950 px-2 sm:px-3 py-1 rounded-xl border border-slate-800">
-                  {match.homeScore} - {match.awayScore}
+                  {match.homeScore ?? 0} - {match.awayScore ?? 0}
                 </div>
               </div>
             ) : (
@@ -128,14 +128,14 @@ export const MatchCard: React.FC<MatchCardProps> = ({
           <div className="col-span-3 flex flex-col-reverse sm:flex-row-reverse items-center sm:gap-3 text-center sm:text-left">
             <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-slate-800/80 p-2 border border-slate-700 flex items-center justify-center shadow-inner group-hover:border-emerald-500/40 transition-colors">
               <span className="text-lg font-black text-blue-400 font-mono">
-                {match.awayTeam.shortName}
+                {match.awayTeam?.shortName || match.awayTeam?.name?.slice(0, 3).toUpperCase() || 'AWY'}
               </span>
             </div>
             <div className="mt-2 sm:mt-0">
               <h3 className="font-bold text-sm sm:text-base text-white tracking-wide">
-                {match.awayTeam.name}
+                {match.awayTeam?.name || 'الفريق الضيف'}
               </h3>
-              <span className="text-[11px] text-slate-400 block">{match.awayTeam.country}</span>
+              <span className="text-[11px] text-slate-400 block">{match.awayTeam?.country || ''}</span>
             </div>
           </div>
         </div>
@@ -166,7 +166,7 @@ export const MatchCard: React.FC<MatchCardProps> = ({
       <div className="p-3 bg-slate-900/90 border-t border-slate-800/80 flex items-center justify-between gap-3">
         <div className="flex items-center gap-1.5 text-xs text-slate-400">
           <Radio className="w-3.5 h-3.5 text-emerald-400" />
-          <span>{match.servers.length} سيرفرات بث متاحة</span>
+          <span>{match.servers?.length || 0} سيرفرات بث متاحة</span>
         </div>
 
         <button

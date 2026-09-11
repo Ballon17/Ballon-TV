@@ -44,15 +44,15 @@ export const MatchTicker: React.FC<MatchTickerProps> = ({ matches, onSelectMatch
 
               {/* Match Teams & Score */}
               <div className="flex items-center gap-2 font-medium text-slate-200">
-                <span className="font-semibold text-slate-100">{match.homeTeam.name}</span>
+                <span className="font-semibold text-slate-100">{match.homeTeam?.name || ''}</span>
                 {match.status !== 'upcoming' ? (
                   <span className="font-mono font-black text-emerald-400 px-1.5 py-0.5 bg-slate-900 rounded border border-slate-800">
-                    {match.homeScore} - {match.awayScore}
+                    {match.homeScore ?? 0} - {match.awayScore ?? 0}
                   </span>
                 ) : (
                   <span className="text-slate-500 font-mono text-[11px]">vs</span>
                 )}
-                <span className="font-semibold text-slate-100">{match.awayTeam.name}</span>
+                <span className="font-semibold text-slate-100">{match.awayTeam?.name || ''}</span>
               </div>
 
               {match.status === 'live' && (

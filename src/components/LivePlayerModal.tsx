@@ -18,17 +18,17 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
   onClose,
   onSimulateGoal
 }) => {
-  const [activeServer, setActiveServer] = useState<StreamServer>(match.servers[0] || {
+  const [activeServer, setActiveServer] = useState<StreamServer>(match.servers?.[0] || {
     id: 'default',
     name: 'سيرفر FHD الأساسي',
     quality: '1080p',
     bitrate: '8000 kbps',
     status: 'online',
-    commentator: match.commentator,
+    commentator: match.commentator || 'المعلق الرياضي',
     type: 'fhd'
   });
 
-  const [customStreamUrl, setCustomStreamUrl] = useState<string>(match.servers[0]?.videoUrl || '');
+  const [customStreamUrl, setCustomStreamUrl] = useState<string>(match.servers?.[0]?.videoUrl || '');
   const [showUrlInput, setShowUrlInput] = useState<boolean>(false);
 
   const getEmbedUrl = (url?: string) => {

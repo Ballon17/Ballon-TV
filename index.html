@@ -12,10 +12,62 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800;900&family=Changa:wght@600;700;800&display=swap" rel="stylesheet">
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #020617;
+        color: #f8fafc;
+        font-family: 'Cairo', system-ui, -apple-system, sans-serif;
+        min-height: 100vh;
+      }
+      @keyframes pulse-ring {
+        0% { transform: scale(0.95); opacity: 0.8; }
+        50% { transform: scale(1.05); opacity: 1; }
+        100% { transform: scale(0.95); opacity: 0.8; }
+      }
+    </style>
+    <script>
+      // Automatically redirect to trailing slash on GitHub Pages directory URLs so relative paths './assets/...' resolve properly
+      if (window.location.hostname.endsWith('github.io') && !window.location.pathname.endsWith('/') && !window.location.pathname.endsWith('.html')) {
+        window.location.replace(window.location.pathname + '/' + window.location.search + window.location.hash);
+      }
+    </script>
   </head>
   <body class="bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-slate-950 min-h-screen">
-    <div id="root"></div>
+    <div id="root">
+      <div id="loading-fallback" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#020617;color:#f8fafc;font-family:'Cairo',sans-serif;text-align:center;padding:24px;direction:rtl;">
+        <div style="width:64px;height:64px;border-radius:20px;background:#064e3b;border:2px solid #10b981;display:flex;align-items:center;justify-content:center;margin-bottom:20px;box-shadow:0 10px 25px rgba(16,185,129,0.3);animation:pulse-ring 2s infinite ease-in-out;">
+          <span style="font-size:28px;">⚽</span>
+        </div>
+        <h1 style="margin:0 0 8px 0;font-size:24px;font-weight:900;color:#ffffff;letter-spacing:-0.5px;">كورة <span style="color:#10b981;">لايف</span></h1>
+        <p style="margin:0 0 20px 0;color:#94a3b8;font-size:13px;">جاري تحميل جدول المباريات وسيرفرات البث المباشر...</p>
+        <div style="width:140px;height:4px;background:#1e293b;border-radius:9999px;overflow:hidden;position:relative;">
+          <div style="position:absolute;top:0;left:0;bottom:0;width:50%;background:#10b981;border-radius:9999px;animation:slide-bar 1.2s infinite ease-in-out;"></div>
+        </div>
+        <style>
+          @keyframes slide-bar {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(200%); }
+          }
+        </style>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Fallback in case main bundle fails to execute or network timed out
+      setTimeout(function() {
+        var loader = document.getElementById('loading-fallback');
+        if (loader && loader.parentElement) {
+          loader.innerHTML = '<div style="background:#0f172a;border:1px solid #334155;border-radius:20px;padding:28px;max-width:440px;box-shadow:0 20px 40px rgba(0,0,0,0.5);">' +
+            '<div style="font-size:36px;margin-bottom:12px;">⚽</div>' +
+            '<h2 style="color:#fff;margin:0 0 8px;font-size:18px;font-weight:bold;">استغرق التحميل وقتاً أطول من المعتاد</h2>' +
+            '<p style="color:#94a3b8;font-size:12px;line-height:1.6;margin:0 0 16px;">يرجى التحقق من اتصال الإنترنت، أو الضغط على الزر أدناه لتحديث الصفحة ومسح التخزين المؤقت.</p>' +
+            '<button onclick="localStorage.clear();location.reload();" style="background:#10b981;color:#fff;border:none;padding:10px 20px;border-radius:12px;font-weight:bold;font-size:13px;cursor:pointer;">تحديث الصفحة ومسح التخزين</button>' +
+            '</div>';
+        }
+      }, 7000);
+    </script>
   </body>
 </html>
 
