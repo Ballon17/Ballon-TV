@@ -10,7 +10,8 @@ import { StandingsView } from './components/StandingsView';
 import { BroadcastGuide } from './components/BroadcastGuide';
 import { TVModeView } from './components/TVModeView';
 import { AdminStreamModal } from './components/AdminStreamModal';
-import { Tv, Flame, Calendar, Trophy, Sparkles, BellRing, RefreshCw, Plus, RotateCcw, MonitorPlay, Settings, Clock, Star } from 'lucide-react';
+import { fetchLiveMatchesFromApi } from './services/matchesApi';
+import { Tv, Flame, Calendar, Trophy, Sparkles, BellRing, RefreshCw, Plus, RotateCcw, MonitorPlay, Settings, Clock, Star, Zap, CheckCircle2 } from 'lucide-react';
 
 export default function App() {
   const [matches, setMatches] = useState<Match[]>(() => {
@@ -57,6 +58,64 @@ export default function App() {
   const [isTVMode, setIsTVMode] = useState<boolean>(false);
   const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
   const [adminSelectedMatchId, setAdminSelectedMatchId] = useState<string>('');
+  const [isSyncing, setIsSyncing] = useState<boolean>(false);
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
+  const [apiSource, setApiSource] = useState<string>('server');
+
+  const syncMatches = async (targetDate: 'yesterday' | 'today' | 'tomorrow') => {
+    setIsSyncing(true);
+    try {
+      const result = await fetchLiveMatchesFromApi(targetDate);
+      if (result && result.matches.length > 0) {
+        setMatches((prev) => {
+          const otherDatesMatches = prev.filter((m) => m.date !== targetDate);
+          const updatedMatches = result.matches.map((newM) => {
+            const existing = prev.find(
+              (m) =>
+                m.id === newM.id ||
+                (m.homeTeam.name === newM.homeTeam.name && m.awayTeam.name === newM.awayTeam.name)
+            );
+            if (existing && existing.servers && existing.servers.length > 0) {
+              return { ...newM, servers: existing.servers };
+            }
+            return newM;
+          });
+          return [...otherDatesMatches, ...updatedMatches];
+        });
+        setSyncStatus('success');
+        setApiSource(result.source);
+        const now = new Date();
+        setLastSyncTime(
+          now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+        );
+      }
+    } catch (err) {
+      console.error('Error syncing live matches:', err);
+      setSyncStatus('error');
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  // Initial fetch and on activeDate change
+  useEffect(() => {
+    if (activeDate === 'all') {
+      syncMatches('today');
+    } else {
+      syncMatches(activeDate);
+    }
+  }, [activeDate]);
+
+  // Background auto-refresh every 30 seconds for live matches
+  useEffect(() => {
+    const timer = setInterval(() => {
+      if (activeDate === 'today' || activeDate === 'all') {
+        syncMatches('today');
+      }
+    }, 30000);
+    return () => clearInterval(timer);
+  }, [activeDate]);
 
   const handleUpdateMatchServers = (matchId: string, servers: StreamServer[]) => {
     setMatches((prev) =>
@@ -313,14 +372,41 @@ export default function App() {
                       </span>
                     )}
                   </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    بث مباشر بدون تقطيع مع سيرفرات متعددة ومعلقين رياضيين مميزين
-                  </p>
+                  <div className="flex items-center gap-2 mt-1 flex-wrap text-xs">
+                    <span className="text-slate-400">
+                      بث مباشر بدون تقطيع مع سيرفرات متعددة ومعلقين رياضيين مميزين
+                    </span>
+                    <span className="text-slate-600 hidden sm:inline">•</span>
+                    <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-950/70 border border-emerald-500/30 text-[11px] text-emerald-300">
+                      <Zap className="w-3 h-3 text-emerald-400" />
+                      <span>API المباريات نشط</span>
+                      {lastSyncTime && (
+                        <span className="text-slate-400 text-[10px] font-mono">
+                          (آخر تحديث: {lastSyncTime})
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              {/* Reset Filters / Add Match / Count badge */}
+              {/* Reset Filters / Add Match / Refresh API / Count badge */}
               <div className="flex items-center gap-2 text-xs flex-wrap">
+                {/* Manual API Refresh Button */}
+                <button
+                  onClick={() => syncMatches(activeDate === 'all' ? 'today' : activeDate)}
+                  disabled={isSyncing}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl font-bold transition-all border ${
+                    isSyncing
+                      ? 'bg-slate-800 text-slate-400 border-slate-700 cursor-not-allowed'
+                      : 'bg-slate-900 hover:bg-slate-800 text-emerald-400 border-emerald-500/30 hover:border-emerald-500/60 shadow-sm cursor-pointer'
+                  }`}
+                  title="تحديث فوري لجدول المباريات والنتائج الحية من سيرفر الـ API"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin text-emerald-400' : ''}`} />
+                  <span>{isSyncing ? 'جاري جلب المباريات...' : 'تحديث الـ API 🔄'}</span>
+                </button>
+
                 <span className="bg-slate-900 border border-slate-800 text-slate-300 font-bold px-3 py-1.5 rounded-xl">
                   {filteredMatches.length} مباريات
                 </span>
