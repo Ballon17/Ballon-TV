@@ -51,13 +51,20 @@ export interface Lineup {
 
 export interface StreamServer {
   id: string;
-  name: string;
-  quality: string;
-  bitrate: string;
+  name: string; // e.g. "سيرفر 1 - beIN Sports 1 FHD"
+  quality: string; // e.g. "1080p 60fps"
+  bitrate: string; // e.g. "8500 kbps"
   status: 'online' | 'busy' | 'backup';
   commentator: string;
-  type: 'fhd' | 'hd' | 'sd' | 'audio';
-  videoUrl?: string;
+  type: 'fhd' | 'hd' | 'sd' | '4k' | 'audio';
+  videoUrl?: string; // Stream URL
+  url?: string; // Alternative stream URL
+  referer?: string; // HTTP Referer
+  userAgent?: string; // HTTP User-Agent
+  origin?: string; // HTTP Origin
+  drmKey?: string; // DRM Key / License URL
+  clearKey?: string; // ClearKey hex or key-id:key pair
+  engine?: 'auto' | 'hls' | 'shaka' | 'html5' | 'iframe';
 }
 
 export interface Match {

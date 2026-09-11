@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { mockMatches } from './data/mockMatches';
-import { Match, MatchEvent } from './types';
+import { Match, MatchEvent, StreamServer } from './types';
 import { Header } from './components/Header';
 import { MatchTicker } from './components/MatchTicker';
 import { MatchCard } from './components/MatchCard';
@@ -8,7 +8,9 @@ import { LivePlayerModal } from './components/LivePlayerModal';
 import { AddMatchModal } from './components/AddMatchModal';
 import { StandingsView } from './components/StandingsView';
 import { BroadcastGuide } from './components/BroadcastGuide';
-import { Tv, Flame, Calendar, Trophy, Sparkles, BellRing, RefreshCw, Plus, RotateCcw } from 'lucide-react';
+import { TVModeView } from './components/TVModeView';
+import { AdminStreamModal } from './components/AdminStreamModal';
+import { Tv, Flame, Calendar, Trophy, Sparkles, BellRing, RefreshCw, Plus, RotateCcw, MonitorPlay, Settings, Clock, Star } from 'lucide-react';
 
 export default function App() {
   const [matches, setMatches] = useState<Match[]>(() => {
@@ -52,6 +54,18 @@ export default function App() {
   const [goalAlert, setGoalAlert] = useState<{ match: Match; scorer: string; team: string } | null>(null);
   const [isAddMatchOpen, setIsAddMatchOpen] = useState<boolean>(false);
   const [editingMatch, setEditingMatch] = useState<Match | null>(null);
+  const [isTVMode, setIsTVMode] = useState<boolean>(false);
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState<boolean>(false);
+  const [adminSelectedMatchId, setAdminSelectedMatchId] = useState<string>('');
+
+  const handleUpdateMatchServers = (matchId: string, servers: StreamServer[]) => {
+    setMatches((prev) =>
+      prev.map((m) => (m.id === matchId ? { ...m, servers } : m))
+    );
+    if (activeStreamingMatch && activeStreamingMatch.id === matchId) {
+      setActiveStreamingMatch((prev) => (prev ? { ...prev, servers } : null));
+    }
+  };
 
   // Persist matches to localStorage
   useEffect(() => {
@@ -208,8 +222,20 @@ export default function App() {
 
   const liveMatches = matches.filter((m) => m.status === 'live');
 
+  if (isTVMode) {
+    return (
+      <TVModeView
+        matches={matches}
+        onSelectMatchForStream={(match) => setActiveStreamingMatch(match)}
+        onExitTVMode={() => setIsTVMode(false)}
+        activeDate={activeDate === 'all' ? 'today' : activeDate}
+        onChangeDate={(date) => setActiveDate(date)}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950 pb-16 md:pb-0">
       {/* Goal Notification Banner */}
       {goalAlert && (
         <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-700 text-white px-5 py-3 rounded-2xl shadow-2xl border border-emerald-400/50 flex items-center gap-3 animate-bounce">
@@ -248,6 +274,11 @@ export default function App() {
         onOpenAddMatch={() => {
           setEditingMatch(null);
           setIsAddMatchOpen(true);
+        }}
+        onToggleTVMode={() => setIsTVMode(true)}
+        onOpenAdminStreamModal={() => {
+          setAdminSelectedMatchId(matches[0]?.id || '');
+          setIsAdminModalOpen(true);
         }}
       />
 
@@ -397,8 +428,21 @@ export default function App() {
           match={activeStreamingMatch}
           onClose={() => setActiveStreamingMatch(null)}
           onSimulateGoal={(teamId) => handleSimulateGoal(activeStreamingMatch.id, teamId)}
+          onOpenAdminPanel={() => {
+            setAdminSelectedMatchId(activeStreamingMatch.id);
+            setIsAdminModalOpen(true);
+          }}
         />
       )}
+
+      {/* Admin Stream Control Modal */}
+      <AdminStreamModal
+        isOpen={isAdminModalOpen}
+        onClose={() => setIsAdminModalOpen(false)}
+        matches={matches}
+        selectedMatchId={adminSelectedMatchId}
+        onUpdateMatchServers={handleUpdateMatchServers}
+      />
 
       {/* Add or Edit Match Modal */}
       {isAddMatchOpen && (
@@ -413,6 +457,77 @@ export default function App() {
           onResetDefaults={handleResetDefaults}
         />
       )}
+
+      {/* Mobile Bottom Navigation Bar */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/95 backdrop-blur-xl border-t border-slate-800/90 px-3 py-2 flex items-center justify-around text-[10px] font-bold shadow-2xl">
+        <button
+          onClick={() => {
+            setActiveDate('yesterday');
+            setActiveView('matches');
+          }}
+          className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${
+            activeDate === 'yesterday' && activeView === 'matches'
+              ? 'text-emerald-400 scale-105'
+              : 'text-slate-400'
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>الأمس</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveDate('today');
+            setActiveView('matches');
+          }}
+          className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all relative ${
+            activeDate === 'today' && activeView === 'matches'
+              ? 'text-emerald-400 scale-105'
+              : 'text-slate-400'
+          }`}
+        >
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
+          </span>
+          <Tv className="w-4 h-4" />
+          <span>اليوم (مباشر)</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setActiveDate('tomorrow');
+            setActiveView('matches');
+          }}
+          className={`flex flex-col items-center gap-1 p-1 rounded-xl transition-all ${
+            activeDate === 'tomorrow' && activeView === 'matches'
+              ? 'text-emerald-400 scale-105'
+              : 'text-slate-400'
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          <span>الغد</span>
+        </button>
+
+        <button
+          onClick={() => setIsTVMode(true)}
+          className="flex flex-col items-center gap-1 p-1 rounded-xl text-blue-400 transition-all hover:scale-105"
+        >
+          <MonitorPlay className="w-4 h-4" />
+          <span>التلفاز 📺</span>
+        </button>
+
+        <button
+          onClick={() => {
+            setAdminSelectedMatchId(matches[0]?.id || '');
+            setIsAdminModalOpen(true);
+          }}
+          className="flex flex-col items-center gap-1 p-1 rounded-xl text-amber-400 transition-all hover:scale-105"
+        >
+          <Settings className="w-4 h-4" />
+          <span>لوحة التحكم ⚙️</span>
+        </button>
+      </div>
 
       {/* Footer */}
       <footer className="bg-slate-950 border-t border-slate-900 mt-12 py-8 px-4 sm:px-6 text-xs text-slate-500">

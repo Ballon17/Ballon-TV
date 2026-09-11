@@ -1,22 +1,25 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Match, StreamServer, MatchEvent, ChatMessage } from '../types';
 import { PitchLineup } from './PitchLineup';
+import { StreamEnginePlayer } from './StreamEnginePlayer';
 import {
   X, Play, Pause, Volume2, VolumeX, Maximize2, Minimize2, RefreshCw,
   Radio, Shield, MessageSquare, BarChart2, Users, Flame, Send,
-  Tv, Sparkles, CheckCircle, Info
+  Tv, Sparkles, CheckCircle, Info, Settings
 } from 'lucide-react';
 
 interface LivePlayerModalProps {
   match: Match;
   onClose: () => void;
   onSimulateGoal?: (teamId: string) => void;
+  onOpenAdminPanel?: () => void;
 }
 
 export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
   match,
   onClose,
-  onSimulateGoal
+  onSimulateGoal,
+  onOpenAdminPanel
 }) => {
   const [activeServer, setActiveServer] = useState<StreamServer>(match.servers?.[0] || {
     id: 'default',
@@ -337,6 +340,17 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
             </button>
           )}
 
+          {onOpenAdminPanel && (
+            <button
+              onClick={onOpenAdminPanel}
+              className="px-3 py-1.5 rounded-xl text-xs font-bold transition-colors bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/30 flex items-center gap-1.5 cursor-pointer"
+              title="تعديل سيرفرات وروابط هذه المباراة (لوحة التحكم)"
+            >
+              <Settings className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">لوحة التحكم ⚙️</span>
+            </button>
+          )}
+
           <button
             onClick={() => setIsCinemaMode(!isCinemaMode)}
             className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-colors hidden md:block ${
@@ -424,33 +438,21 @@ export const LivePlayerModal: React.FC<LivePlayerModalProps> = ({
               ref={playerContainerRef}
               className="relative w-full aspect-video bg-black rounded-2xl overflow-hidden border border-slate-800 shadow-2xl flex flex-col justify-between group"
             >
-              {/* Either Real Video/Iframe or Canvas Soccer Simulation */}
-              {embedUrl ? (
-                embedUrl.endsWith('.mp4') || embedUrl.endsWith('.webm') ? (
-                  <video
-                    src={embedUrl}
-                    autoPlay={isPlaying}
-                    muted={isMuted}
-                    playsInline
-                    className="absolute inset-0 w-full h-full object-cover"
-                  />
-                ) : (
-                  <iframe
-                    src={embedUrl}
-                    title="Live Broadcast"
-                    className="absolute inset-0 w-full h-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                    allowFullScreen
-                  />
-                )
-              ) : (
-                <canvas
-                  ref={canvasRef}
-                  width={854}
-                  height={480}
-                  className="absolute inset-0 w-full h-full object-cover"
+              {/* Powerful Stream Engine Player */}
+              <div className="absolute inset-0 w-full h-full">
+                <StreamEnginePlayer
+                  server={{
+                    ...activeServer,
+                    videoUrl: customStreamUrl || activeServer.videoUrl || activeServer.url
+                  }}
+                  match={match}
+                  isPlaying={isPlaying}
+                  isMuted={isMuted}
+                  volume={volume}
+                  onTogglePlay={() => setIsPlaying(!isPlaying)}
+                  onToggleMute={() => setIsMuted(!isMuted)}
                 />
-              )}
+              </div>
 
               {/* Top Video Score Overlay Bug */}
               <div className="relative z-10 p-4 flex items-center justify-between pointer-events-none">

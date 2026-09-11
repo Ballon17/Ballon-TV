@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tv, Radio, Search, Calendar, Star, Volume2, VolumeX, Shield, Trophy, Plus } from 'lucide-react';
+import { Tv, Radio, Search, Calendar, Star, Volume2, VolumeX, Shield, Trophy, Plus, Settings, MonitorPlay } from 'lucide-react';
 import { Match } from '../types';
 
 interface HeaderProps {
@@ -21,6 +21,8 @@ interface HeaderProps {
   favoritesCount: number;
   matches: Match[];
   onOpenAddMatch: () => void;
+  onToggleTVMode?: () => void;
+  onOpenAdminStreamModal?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -42,6 +44,8 @@ export const Header: React.FC<HeaderProps> = ({
   favoritesCount,
   matches,
   onOpenAddMatch,
+  onToggleTVMode,
+  onOpenAdminStreamModal,
 }) => {
   const leagues = [
     { id: 'all', name: 'جميع البطولات', icon: '🏆' },
@@ -174,6 +178,30 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
+            {/* TV Mode Switcher */}
+            {onToggleTVMode && (
+              <button
+                onClick={onToggleTVMode}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold bg-blue-950/70 hover:bg-blue-900/80 text-blue-300 border border-blue-500/40 shadow-md shadow-blue-500/10 transition-all cursor-pointer"
+                title="تفعيل وضع التلفاز الذكي Smart TV"
+              >
+                <MonitorPlay className="w-4 h-4 text-blue-400" />
+                <span className="hidden sm:inline">وضع التلفاز 📺</span>
+              </button>
+            )}
+
+            {/* Admin Stream Controls */}
+            {onOpenAdminStreamModal && (
+              <button
+                onClick={onOpenAdminStreamModal}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-extrabold bg-slate-900 hover:bg-slate-800 text-emerald-400 border border-emerald-500/40 shadow-md transition-all cursor-pointer"
+                title="لوحة تحكم المشرف لتعديل روابط وسيرفرات البث و DRM"
+              >
+                <Settings className="w-4 h-4 text-emerald-400" />
+                <span className="hidden md:inline">لوحة التحكم ⚙️</span>
+              </button>
+            )}
+
             <button
               onClick={onToggleFavorites}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
@@ -195,11 +223,12 @@ export const Header: React.FC<HeaderProps> = ({
             {/* Add Match / Stream Button */}
             <button
               onClick={onOpenAddMatch}
-              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-transform active:scale-95"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/30 transition-transform active:scale-95 cursor-pointer"
               title="إضافة أو تعديل مباراة ورابط البث"
             >
               <Plus className="w-4 h-4 stroke-[3]" />
-              <span>إضافة مباراة / بث</span>
+              <span className="hidden sm:inline">إضافة مباراة / بث</span>
+              <span className="sm:hidden">+ مباراة</span>
             </button>
           </div>
         </div>
