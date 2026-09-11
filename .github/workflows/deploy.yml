@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -29,10 +29,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci || npm install
+        run: npm install
 
       - name: Build
         run: |
@@ -40,6 +39,13 @@ jobs:
           cp dist/index.html dist/404.html
         env:
           BASE_URL: ${{ steps.pages.outputs.base_path }}/
+
+      - name: Deploy to gh-pages branch (Branch fallback)
+        uses: peaceiris/actions-gh-pages@v4
+        if: ${{ github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3

@@ -4,6 +4,9 @@ import App from './App.tsx';
 import {ErrorBoundary} from './components/ErrorBoundary.tsx';
 import './index.css';
 
+// Flag to signal that React bundle loaded and began execution
+(window as any).__REACT_LOADED__ = true;
+
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <ErrorBoundary>
